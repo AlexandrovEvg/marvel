@@ -2,11 +2,8 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import useMarvelService from '../../services/MarvelService';
-import Spinner from '../spinner/Spinner';
-import ErrorMessage from '../errorMessage/ErrorMessage';
-import Skeleton from '../skeleton/Skeleton';
 import FindCharacter from '../findCharacter/FindCharacter';
-
+import setContent from '../../utils/setContent';
 import './charInfo.scss';
 import { SingleComicPage } from '../pages';
 
@@ -14,7 +11,7 @@ const CharInfo = (props) => {
   const [char, setChar] = useState(null);
   const [allComics, setAllComics] = useState([]);
 
-  const { loading, error, getCharacter, clearError, getAllComics } =
+  const { getCharacter, clearError, getAllComics, process, setProcess } =
     useMarvelService();
 
   useEffect(() => {
@@ -22,7 +19,9 @@ const CharInfo = (props) => {
   }, [props.charId]);
 
   useEffect(() => {
-    getAllComics().then((res) => setAllComics(res));
+    getAllComics()
+      .then((res) => setAllComics(res))
+      .then(() => setProcess('waiting'));
   }, []);
 
   const updateComic = () => {
@@ -32,35 +31,27 @@ const CharInfo = (props) => {
     }
 
     clearError();
-    getCharacter(charId).then(onComicLoaded);
+    getCharacter(charId)
+      .then(onComicLoaded)
+      .then(() => setProcess('confirmed'));
   };
 
   const onComicLoaded = (char) => {
     setChar(char);
   };
 
-  const skeleton = char || loading || error ? null : <Skeleton />;
-  const errorMessage = error ? <ErrorMessage /> : null;
-  const spinner = loading ? <Spinner /> : null;
-  const content = !(loading || error || !char) ? (
-    <View char={char} allComics={allComics} />
-  ) : null;
-
   return (
     <div className="char__block">
       <div className="char__info">
-        {skeleton}
-        {errorMessage}
-        {spinner}
-        {content}
+        {setContent(process, View, char, allComics)}
       </div>
       <FindCharacter />
     </div>
   );
 };
 
-const View = ({ char, allComics }) => {
-  const { name, description, thumbnail, homepage, wiki, comics } = char;
+const View = ({ data, all }) => {
+  const { name, description, thumbnail, homepage, wiki, comics } = data;
   let imgStyle = { objectFit: 'cover' };
   if (
     thumbnail ===
@@ -92,7 +83,7 @@ const View = ({ char, allComics }) => {
         {comics.map((item, i) => {
           // eslint-disable-next-line
           if (i > 9) return;
-          let index = allComics.findIndex((el) => el.title === item) + 1;
+          let index = all.findIndex((el) => el.title === item) + 1;
           return (
             <li key={i} className="char__comics-item">
               <Link
