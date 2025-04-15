@@ -105,7 +105,33 @@ const CharList = (props) => {
     });
     // А эта конструкция вынесена для центровки спиннера/ошибки
 
-    return <ul className="char__grid">{items}</ul>;
+    const duration = 300;
+
+    const defaultStyle = {
+      transition: `all ${duration}ms ease-in-out`,
+      opacity: 1,
+      transform: 'rotateY(0deg)',
+    };
+
+    const transitionStyle = {
+      entering: { opacity: 0.5, transform: 'rotateY(90deg)' },
+      entered: { opacity: 0.5, transform: 'rotateY(90deg)' },
+      exiting: { opacity: 1, transform: 'rotateY(0deg)' },
+      exited: { opacity: 1, transform: 'rotateY(0deg)' },
+    };
+
+    return (
+      <Transition in={newItemLoading} timeout={duration}>
+        {(state) => (
+          <ul
+            className="char__grid"
+            style={{ ...defaultStyle, ...transitionStyle[state] }}
+          >
+            {items}
+          </ul>
+        )}
+      </Transition>
+    );
   };
 
   const elements = useMemo(() => {
